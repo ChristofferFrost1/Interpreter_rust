@@ -14,7 +14,7 @@ enum Expr {
     Parameters(Vec<Expr>),
     Lambda(Vec<Expr>),
     Let(Box<Expr>, Box<Expr>, Box<Expr>),
-    Define(Box<Expr>, Box<Expr>),
+    Assignment(Box<Expr>, Box<Expr>),
 }
 
 #[derive(Debug, Clone)]
@@ -75,7 +75,8 @@ impl Env {
     }
 
     fn initialize_builtins(&mut self) {
-        self.builtins.insert("add".to_string(), ResultValue::Func(2, |args| {
+        self.builtins.insert("add".to_string(), 
+        ResultValue::Func(2, |args| {
             if args.len() != 2 {
                 return Err("Expected exactly 2 arguments".to_string());
             }
@@ -276,7 +277,7 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
             env.insert_vars(name, value);
             eval_expr(*body, env)
         }
-        Expr::Define(name, value) => {
+        Expr::Assignment(name, value) => {
             let name = if let Expr::Identifier(name) = *name {
                 name
             } else {
