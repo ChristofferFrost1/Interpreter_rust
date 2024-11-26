@@ -1,0 +1,11 @@
+// This should produce
+{
+  let y = 0;
+  let z = y = x = 333;
+  print("x is ");
+  print(x);
+  print("y is ");
+  print(y);
+  print("z is ");
+  print(z)
+}
