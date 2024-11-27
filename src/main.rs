@@ -48,6 +48,7 @@ impl std::fmt::Display for ResultValue {
 struct Env {
     vars: HashMap<String,Rc<RefCell<ResultValue>>>,
     builtins: HashMap<String, ResultValue>,
+    parent: Option<Rc<Env>>,
 }
 
 impl Env {
@@ -222,11 +223,14 @@ impl Env {
         );
         
 
-        Self { vars, builtins }
+        Self { vars, builtins, parent: None }
+    }
+    fn new_with_parent(parent: Rc<Env>) -> Self {
+        Self { vars: HashMap::new(), builtins: HashMap::new(), parent: Some(parent) }
     }
 
-    fn get_vars(&self, name: &str) -> Option<ResultValue> {
-        self.vars.get(name).map(|v| v.borrow().clone())
+    fn get_vars(&self, name: &str) -> Option<Rc<RefCell<ResultValue>>> {
+       self.vars.get(name).cloned().or_else(|| {self.parent.as_ref().and_then(|p| p.get_vars(name))})
     }
 
     fn insert_vars(&mut self, name: String, value: ResultValue) {
@@ -251,7 +255,7 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
         }
 
         Expr::Identifier(value) => match env.get_vars(&value) {
-            Some(val) => Ok(val),
+            Some(val) => Ok(val.borrow().clone()),
             None => Ok(ResultValue::String(value)),
         },
 
@@ -329,10 +333,6 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
                 } else {
                     env.insert_vars(name.clone(), value.clone());
                 }
-                Ok(value)
-            } else if let Expr::Assignment(lhs, rhs) = *name {
-                // If the left-hand side is another assignment, evaluate it
-                eval_expr(Expr::Assignment(lhs, Box::new(Expr::Assignment(rhs, Box::new(Expr::Number(0))))), env)?;
                 Ok(value)
             } else {
                 Err("Invalid assignment target".to_string())
