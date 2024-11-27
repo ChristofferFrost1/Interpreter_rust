@@ -346,8 +346,8 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
                 return Err("Invalid variable name".to_string());
             };
             let value = eval_expr(*value, env)?;
-            env.update_vars(&name, value)?;
-            Ok(ResultValue::Number(0))
+            env.update_vars(&name, value.clone())?;
+            Ok(value)
         }
     }
 }
