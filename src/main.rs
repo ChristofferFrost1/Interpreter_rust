@@ -1,6 +1,6 @@
 use serde_derive::Deserialize;
 use std::{
-    cell::RefCell, collections::HashMap, io::{self, Read}, rc::Rc
+    collections::HashMap, io::{self, Read}
 };
 
 
@@ -17,8 +17,8 @@ enum Expr {
     Parameters(Vec<Expr>),
     Lambda(Vec<Expr>),
     Let(Box<Expr>, Box<Expr>, Box<Expr>),
+    Define(Box<Expr>, Box<Expr>),
     Assignment(Box<Expr>, Box<Expr>),
-  
 }
 
 
@@ -46,18 +46,17 @@ impl std::fmt::Display for ResultValue {
 
 #[derive(Debug, Clone)]
 struct Env {
-    vars: HashMap<String,Rc<RefCell<ResultValue>>>,
+    vars: HashMap<String, ResultValue>,
     builtins: HashMap<String, ResultValue>,
-    parent: Option<Rc<Env>>,
 }
 
 impl Env {
     fn new() -> Self {
         let mut vars = HashMap::new();
         // Initialize the environment with Roman numerals
-        vars.insert("x".to_string(), Rc::new(RefCell::new(ResultValue::Number(10))));
-        vars.insert("v".to_string(), Rc::new(RefCell::new(ResultValue::Number(5))));
-        vars.insert("i".to_string(), Rc::new(RefCell::new(ResultValue::Number(1))));
+        vars.insert("x".to_string(), ResultValue::Number(10));
+        vars.insert("v".to_string(), ResultValue::Number(5));
+        vars.insert("i".to_string(), ResultValue::Number(1));
 
         // Initialize the environment with built-in functions
         let mut builtins = HashMap::new();
@@ -223,18 +222,24 @@ impl Env {
         );
         
 
-        Self { vars, builtins, parent: None }
-    }
-    fn new_with_parent(parent: Rc<Env>) -> Self {
-        Self { vars: HashMap::new(), builtins: HashMap::new(), parent: Some(parent) }
+        Self { vars, builtins }
     }
 
-    fn get_vars(&self, name: &str) -> Option<Rc<RefCell<ResultValue>>> {
-       self.vars.get(name).cloned().or_else(|| {self.parent.as_ref().and_then(|p| p.get_vars(name))})
+    fn get_vars(&self, name: &str) -> Option<ResultValue> {
+        self.vars.get(name).cloned()
     }
 
     fn insert_vars(&mut self, name: String, value: ResultValue) {
-        self.vars.insert(name, Rc::new(RefCell::new(value)));
+        self.vars.insert(name, value);
+    }
+
+    fn update_vars(&mut self, name: &str, value: ResultValue) -> Result<(), String> {
+        if self.vars.contains_key(name) {
+            self.vars.insert(name.to_string(), value);
+            Ok(())
+        } else {
+            Err("Unbound identifier".to_string())
+        }
     }
 }
 
@@ -255,7 +260,7 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
         }
 
         Expr::Identifier(value) => match env.get_vars(&value) {
-            Some(val) => Ok(val.borrow().clone()),
+            Some(val) => Ok(val),
             None => Ok(ResultValue::String(value)),
         },
 
@@ -322,23 +327,28 @@ fn eval_expr(expr: Expr, env: &mut Env) -> Result<ResultValue, String> {
             eval_expr(*body, env)
         }
 
-        Expr::Assignment(name, value) => {
-            let value = eval_expr(*value, env)?;
-        
-            // Handle nested assignments: value must be propagated
-            if let Expr::Identifier(name) = *name {
-                // Check if the name exists in vars, and update or create it
-                if let Some(existing) = env.vars.get(&name) {
-                    *existing.borrow_mut() = value.clone();
-                } else {
-                    env.insert_vars(name.clone(), value.clone());
-                }
-                Ok(value)
+        Expr::Define(name, value) => {
+            let name = if let Expr::Identifier(name) = *name {
+                name
             } else {
-                Err("Invalid assignment target".to_string())
-            }
+                return Err("Invalid variable name".to_string());
+            };
+            let value = eval_expr(*value, env)?;
+
+            env.insert_vars(name, value);
+            Ok(ResultValue::Number(0))
         }
-        
+
+        Expr::Assignment(name, value) => {
+            let name = if let Expr::Identifier(name) = *name {
+                name
+            } else {
+                return Err("Invalid variable name".to_string());
+            };
+            let value = eval_expr(*value, env)?;
+            env.update_vars(&name, value)?;
+            Ok(ResultValue::Number(0))
+        }
     }
 }
 
