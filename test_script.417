@@ -1,0 +1,67 @@
+
+
+{
+  let y = 0;
+  let z = y = x = 333;
+  print("x is ");
+  print(x);
+  print("y is ");
+  print(y);
+  print("z is ");
+  print(z);
+
+print("10 + 20 = ");
+print(add(10, 20));
+
+print("50 - 15 = ");
+print(sub(50, 15));
+  
+print("7 * 6 = ");
+print(mul(7, 6));
+  
+print("42 / 7 = ");
+print(div(42, 7));
+
+print("2^3 = ");
+print(pow(2, 3));
+
+// Boolean checks
+print("Boolean checks:");
+print("Is 0 zero? ");
+print(zero?(0));
+  
+print("Is 10 zero? ");
+print(zero?(10));
+
+// Comparisons
+print("Comparisons:");
+print("Is 10 == 10? ");
+print(equal(10, 10));
+
+print("Is 10 < 20? ");
+print(<(10, 20));
+
+print("Is 20 > 10? ");
+print(>(20, 10));
+
+print("Is 10 <= 20? ");
+print(leq (10, 20));
+
+print("Is 20 >= 10? ");
+print(geq (20, 10));
+
+
+print("Factorial of 10:");
+
+λ(f, n) {
+ cond 
+  (zero?(n) => 1) 
+  (true => mul(n, f(f, sub(n, 1))))
+}
+(λ(f, n) {
+   cond  
+    (zero?(n) => 1) 
+    (true => mul(n, f(f, sub(n, 1))))
+}, 5)
+
+}

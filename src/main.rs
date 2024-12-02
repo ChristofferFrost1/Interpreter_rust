@@ -184,7 +184,7 @@ impl Env {
             }),
         );
         builtins.insert(
-            ">=".to_string(),
+            "geq".to_string(),
             ResultValue::Func(2, |args| {
                 if args.len() != 2 {
                     return Err("Expected exactly 2 arguments".to_string());
@@ -197,7 +197,7 @@ impl Env {
             }),
         );
         builtins.insert(
-            "<=".to_string(),
+            "leq".to_string(),
             ResultValue::Func(2, |args| {
                 if args.len() != 2 {
                     return Err("Expected exactly 2 arguments".to_string());
