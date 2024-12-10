@@ -7,15 +7,15 @@ use std::{
 #[derive(Debug, Deserialize, Clone)]
 #[serde(rename_all = "PascalCase")]
 enum Expr {
+    Cond(Vec<Expr>),
     Application(Vec<Expr>),
     Identifier(String),
-    Cond(Vec<Expr>),
-    Block(Vec<Expr>),
     Clause(Vec<Expr>),
+    Block(Vec<Expr>),
     Number(i64),
     String(String),
-    Parameters(Vec<Expr>),
     Lambda(Vec<Expr>),
+    Parameters(Vec<Expr>),
     Let(Box<Expr>, Box<Expr>, Box<Expr>),
     Define(Box<Expr>, Box<Expr>),
     Assignment(Box<Expr>, Box<Expr>),
@@ -25,9 +25,9 @@ enum Expr {
 
 #[derive(Debug, Clone)]
 enum ResultValue {
+    String(String),
     Number(i64),
     Bool(bool),
-    String(String),
     Func(usize, fn(Vec<ResultValue>) -> Result<ResultValue, String>),
     Lambda(Vec<String>, Box<Expr>, Env),
 }
